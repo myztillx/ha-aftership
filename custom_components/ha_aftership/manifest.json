@@ -1,0 +1,14 @@
+{
+  "domain": "ha_aftership",
+  "name": "Aftership",
+  "codeowners": [
+    "@myztillx"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/myztillx/ha-aftership",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/myztillx/ha-aftership/issues",
+  "requirements": ["aftership-tracking-sdk==9.0.0"],
+  "version": "0.1.0"
+}
