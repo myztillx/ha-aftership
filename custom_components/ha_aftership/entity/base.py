@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from custom_components.ha_aftership.const import ATTRIBUTION
 from custom_components.ha_aftership.coordinator import AftershipDataUpdateCoordinator
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 if TYPE_CHECKING:
@@ -65,6 +65,7 @@ class AftershipEntity(CoordinatorEntity[AftershipDataUpdateCoordinator]):
                 ),
             },
             name=coordinator.config_entry.title,
-            manufacturer=coordinator.config_entry.domain,
-            model=coordinator.data.get("model", "Unknown"),
+            entry_type=DeviceEntryType.SERVICE,
+            # manufacturer=coordinator.config_entry.domain,
+            # model=coordinator.data.get("model", "Unknown"),
         )

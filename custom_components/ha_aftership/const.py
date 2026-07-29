@@ -6,7 +6,9 @@ LOGGER: Logger = getLogger(__package__)
 
 # Integration metadata
 DOMAIN = "ha_aftership"
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
+ATTRIBUTION = "Data provided by aftership.com"
+CONF_NAME = "name"
+CONF_API_KEY = "api_key"
 
 # Platform parallel updates - applied to all platforms
 PARALLEL_UPDATES = 1

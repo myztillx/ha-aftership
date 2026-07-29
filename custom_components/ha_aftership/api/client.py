@@ -10,11 +10,11 @@ https://developers.home-assistant.io/docs/api_lib_index
 
 from __future__ import annotations
 
-import asyncio
-import socket
-from typing import Any
-
 import aiohttp
+import tracking
+from tracking import GetTrackingsResponse, auth
+
+from homeassistant.core import HomeAssistant
 
 
 class AftershipApiClientError(Exception):
@@ -57,20 +57,11 @@ def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
 
 class AftershipApiClient:
     """
-    API Client for Smart Air Purifier integration.
+    API Client for Aftership integration.
 
     This client demonstrates authentication and API communication patterns
     for Home Assistant integrations. It handles HTTP requests, error handling,
     and credential management.
-
-    The username and password are stored and would be used for:
-    - HTTP Basic Auth headers
-    - OAuth token exchange
-    - API key generation
-    - Session token management
-
-    Note: JSONPlaceholder is used as a demo endpoint and doesn't require auth.
-    In production, replace with your actual API endpoint that validates credentials.
 
     For more information on API clients:
     https://developers.home-assistant.io/docs/api_lib_index
@@ -84,154 +75,95 @@ class AftershipApiClient:
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        session: aiohttp.ClientSession,
+        hass: HomeAssistant,
+        api_key: str,
     ) -> None:
         """
         Initialize the API Client with credentials.
 
         Args:
-            username: The username for authentication from config flow.
-            password: The password for authentication from config flow.
-            session: The aiohttp ClientSession to use for requests.
+            api_key: The API key for authenticating with the Aftership API.
 
         """
-        self._username = username
-        self._password = password
-        self._session = session
+        self.hass = hass
+        self._api_key = api_key
+        self._client = tracking.Client(tracking.Configuration(api_key=api_key, authentication_type=auth.ApiKey))
 
-    async def async_get_data(self) -> Any:
+    async def async_get_trackings(self) -> GetTrackingsResponse:
         """
-        Get data from the API.
+        Get trackings from the API.
 
-        This method fetches the current state and sensor data from the device.
-        It demonstrates where credentials would be used in production:
-        - Authorization headers (Basic Auth, Bearer Token)
-        - Query parameters (username, api_key)
-        - Session cookies (after login)
+        This method fetches the current trackings from the Aftership API.
 
         Returns:
-            A dictionary containing the device data.
+            A GetTrackingsResponse object containing the tracking data.
 
         Raises:
-            AftershipApiClientAuthenticationError: If authentication fails.
-            AftershipApiClientCommunicationError: If communication fails.
-            AftershipApiClientError: For other API errors.
-
-        """
-        # In production: Use username/password for authentication
-        # Example patterns:
-        # 1. Basic Auth: auth=aiohttp.BasicAuth(self._username, self._password)
-        # 2. Token: headers={"Authorization": f"Bearer {self._get_token()}"}
-        # 3. API Key: params={"username": self._username, "key": self._password}
-
-        return await self._api_wrapper(
-            method="get",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            # For demo purposes with JSONPlaceholder (no auth required)
-            # In production, add authentication here
-        )
-
-    async def async_set_fan_speed(self, speed: str) -> Any:
-        """
-        Set the fan speed on the device.
-
-        Args:
-            speed: The fan speed to set (low, medium, high, auto).
-
-        Returns:
-            A dictionary containing the API response.
-
-        Raises:
-            AftershipApiClientAuthenticationError: If authentication fails.
-            AftershipApiClientCommunicationError: If communication fails.
-            AftershipApiClientError: For other API errors.
-
-        """
-        # In production: Send authenticated request to change fan speed
-        return await self._api_wrapper(
-            method="patch",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            data={"fan_speed": speed, "user": self._username},
-            headers={"Content-type": "application/json; charset=UTF-8"},
-        )
-
-    async def async_set_target_humidity(self, humidity: int) -> Any:
-        """
-        Set the target humidity on the device.
-
-        Args:
-            humidity: The target humidity percentage (30-80).
-
-        Returns:
-            A dictionary containing the API response.
-
-        Raises:
-            AftershipApiClientAuthenticationError: If authentication fails.
-            AftershipApiClientCommunicationError: If communication fails.
-            AftershipApiClientError: For other API errors.
-
-        """
-        # In production: Send authenticated request to change humidity setting
-        return await self._api_wrapper(
-            method="patch",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            data={"target_humidity": humidity, "user": self._username},
-            headers={"Content-type": "application/json; charset=UTF-8"},
-        )
-
-    async def _api_wrapper(
-        self,
-        method: str,
-        url: str,
-        data: dict | None = None,
-        headers: dict | None = None,
-    ) -> Any:
-        """
-        Wrapper for API requests with error handling.
-
-        This method handles all HTTP requests and translates exceptions
-        into integration-specific exceptions.
-
-        Args:
-            method: The HTTP method (get, post, patch, etc.).
-            url: The URL to request.
-            data: Optional data to send in the request body.
-            headers: Optional headers to include in the request.
-
-        Returns:
-            The JSON response from the API.
-
-        Raises:
-            AftershipApiClientAuthenticationError: If authentication fails.
-            AftershipApiClientCommunicationError: If communication fails.
-            AftershipApiClientError: For other API errors.
+            AftershipApiClientError: For API errors.
 
         """
         try:
-            async with asyncio.timeout(10):
-                response = await self._session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                )
-                _verify_response_or_raise(response)
-                return await response.json()
-
-        except TimeoutError as exception:
-            msg = f"Timeout error fetching information - {exception}"
-            raise AftershipApiClientCommunicationError(
-                msg,
-            ) from exception
-        except (aiohttp.ClientError, socket.gaierror) as exception:
-            msg = f"Error fetching information - {exception}"
-            raise AftershipApiClientCommunicationError(
-                msg,
-            ) from exception
+            return await self.hass.async_add_executor_job(self._client.tracking.get_trackings)
         except Exception as exception:
-            msg = f"Something really wrong happened! - {exception}"
+            msg = f"Failed to fetch AfterShip trackings: {exception}"
             raise AftershipApiClientError(
                 msg,
             ) from exception
+
+    async def async_add_tracking(self, tracking_number: str, title: str | None = None) -> None:
+        """
+        Add a new tracking to the API.
+
+        This method adds a new tracking number with the specified title
+        to the Aftership API.
+
+        Args:
+            tracking_number: The tracking number to add.
+            title: The title for the tracking number.
+
+        Raises:
+            AftershipApiClientError: For API errors.
+        """
+        req = tracking.CreateTrackingRequest()
+        req.tracking_number = tracking_number
+        if title:
+            req.title = title
+        try:
+            await self.hass.async_add_executor_job(
+                self._client.tracking.create_tracking,
+                req,
+            )
+        except Exception as exception:
+            msg = f"Failed to add AfterShip tracking: {exception}"
+            raise AftershipApiClientError(
+                msg,
+            ) from exception
+
+    async def async_remove_tracking_by_id(self, tracking_id: str) -> None:
+        """
+        Remove a specific tracking by ID from the API.
+
+        This method removes the tracking information for a specific tracking ID
+        from the Aftership API.
+
+        Args:
+            tracking_id: The ID of the tracking to remove.
+        """
+        await self.hass.async_add_executor_job(self._client.tracking.delete_tracking_by_id, tracking_id)
+
+    async def async_test_connection(self) -> bool:
+        """
+        Test the connection to the Aftership API.
+
+        This method attempts to fetch trackings to verify that the API key is valid
+        and that the connection to the Aftership API is working.
+
+        Raises:
+            AftershipApiClientError: If the connection test fails.
+        """
+        try:
+            await self.hass.async_add_executor_job(self._client.courier.get_couriers)
+        except AftershipApiClientError:
+            return False
+        else:
+            return True

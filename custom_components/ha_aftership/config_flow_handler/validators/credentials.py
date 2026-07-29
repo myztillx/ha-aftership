@@ -14,20 +14,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from custom_components.ha_aftership.api import AftershipApiClient
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 
-async def validate_credentials(hass: HomeAssistant, username: str, password: str) -> None:
+async def validate_credentials(hass: HomeAssistant, api_key: str) -> None:
     """
     Validate user credentials by testing API connection.
 
     Args:
         hass: Home Assistant instance.
-        username: The username to validate.
-        password: The password to validate.
+        api_key: The API key to validate.
 
     Raises:
         AftershipApiClientAuthenticationError: If credentials are invalid.
@@ -35,12 +33,8 @@ async def validate_credentials(hass: HomeAssistant, username: str, password: str
         AftershipApiClientError: For other API errors.
 
     """
-    client = AftershipApiClient(
-        username=username,
-        password=password,
-        session=async_create_clientsession(hass),
-    )
-    await client.async_get_data()  # May raise authentication/communication errors
+    client = AftershipApiClient(hass, api_key)
+    await client.async_test_connection()  # May raise authentication/communication errors
 
 
 __all__ = [

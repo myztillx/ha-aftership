@@ -11,18 +11,19 @@ https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from custom_components.ha_aftership.api import AftershipApiClientAuthenticationError, AftershipApiClientError
+from tracking import GetTrackingsResponse
+
+from custom_components.ha_aftership.api import AftershipApiClientError
 from custom_components.ha_aftership.const import LOGGER
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 if TYPE_CHECKING:
     from custom_components.ha_aftership.data import AftershipConfigEntry
 
 
-class AftershipDataUpdateCoordinator(DataUpdateCoordinator):
+class AftershipDataUpdateCoordinator(DataUpdateCoordinator[GetTrackingsResponse]):
     """
     Class to manage fetching data from the API.
 
@@ -61,7 +62,7 @@ class AftershipDataUpdateCoordinator(DataUpdateCoordinator):
         # self._device_id = device_info["id"]
         LOGGER.debug("Coordinator setup complete for %s", self.config_entry.entry_id)
 
-    async def _async_update_data(self) -> Any:
+    async def _async_update_data(self) -> GetTrackingsResponse:
         """
         Fetch data from API endpoint.
 
@@ -97,20 +98,7 @@ class AftershipDataUpdateCoordinator(DataUpdateCoordinator):
             UpdateFailed: If data fetching fails for other reasons, optionally with retry_after.
         """
         try:
-            # Optional: Get active entity contexts to optimize data fetching
-            # listening_contexts = set(self.async_contexts())
-            # LOGGER.debug("Active entity contexts: %s", listening_contexts)
-
-            # Fetch data from API
-            # In production, you could pass listening_contexts to optimize the API call:
-            # return await self.config_entry.runtime_data.client.async_get_data(listening_contexts)
-            return await self.config_entry.runtime_data.client.async_get_data()
-        except AftershipApiClientAuthenticationError as exception:
-            LOGGER.warning("Authentication error - %s", exception)
-            raise ConfigEntryAuthFailed(
-                translation_domain="ha_aftership",
-                translation_key="authentication_failed",
-            ) from exception
+            return await self.config_entry.runtime_data.client.async_get_trackings()
         except AftershipApiClientError as exception:
             LOGGER.exception("Error communicating with API")
             # If the API provides rate limit information, you can honor it:
@@ -120,3 +108,23 @@ class AftershipDataUpdateCoordinator(DataUpdateCoordinator):
                 translation_domain="ha_aftership",
                 translation_key="update_failed",
             ) from exception
+
+    async def async_add_tracking(self, tracking_number: str, title: str | None = None) -> None:
+        """Add a tracking number and refresh data."""
+        await self.config_entry.runtime_data.client.async_add_tracking(tracking_number, title)
+        await self.async_request_refresh()
+
+    async def async_remove_tracking(self, tracking_number: str) -> None:
+        """Find tracking ID by number, remove it, and refresh data."""
+        if not self.data.data:
+            return
+        trackings = self.data.data.trackings
+        if trackings is None:
+            return
+        target_id = next((t.id for t in trackings if t.tracking_number == tracking_number), None)
+
+        if target_id:
+            await self.config_entry.runtime_data.client.async_remove_tracking_by_id(target_id)
+            await self.async_request_refresh()
+        else:
+            LOGGER.warning("Tracking number %s not found for removal", tracking_number)

@@ -14,17 +14,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from slugify import slugify
-
 from custom_components.ha_aftership.config_flow_handler.schemas import (
     get_reauth_schema,
     get_reconfigure_schema,
     get_user_schema,
 )
 from custom_components.ha_aftership.config_flow_handler.validators import validate_credentials
-from custom_components.ha_aftership.const import DOMAIN, LOGGER
+from custom_components.ha_aftership.const import CONF_API_KEY, CONF_NAME, DOMAIN, LOGGER
 from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.loader import async_get_loaded_integration
 
 if TYPE_CHECKING:
@@ -92,22 +89,20 @@ class AftershipConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                await validate_credentials(
-                    self.hass,
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
-                )
+                await validate_credentials(self.hass, user_input[CONF_API_KEY])
             except Exception as exception:  # noqa: BLE001
                 errors["base"] = self._map_exception_to_error(exception)
             else:
-                # Set unique ID based on username
+                # Set unique ID based on API key
                 # NOTE: This is just an example - use a proper unique ID in production
                 # See: https://developers.home-assistant.io/docs/config_entries_config_flow_handler#unique-ids
-                await self.async_set_unique_id(slugify(user_input[CONF_USERNAME]))
+                api_slug = user_input[CONF_API_KEY][4:]
+                unique_id = f"{user_input[CONF_NAME]}-{api_slug}"
+                await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
+                    title=user_input[CONF_NAME],
                     data=user_input,
                 )
 
@@ -147,8 +142,7 @@ class AftershipConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await validate_credentials(
                     self.hass,
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
+                    api_key=user_input[CONF_API_KEY],
                 )
             except Exception as exception:  # noqa: BLE001
                 errors["base"] = self._map_exception_to_error(exception)
@@ -160,7 +154,7 @@ class AftershipConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=get_reconfigure_schema(entry.data.get(CONF_USERNAME, "")),
+            data_schema=get_reconfigure_schema(entry.data.get(CONF_API_KEY, "")),
             errors=errors,
         )
 
@@ -206,8 +200,7 @@ class AftershipConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await validate_credentials(
                     self.hass,
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
+                    api_key=user_input[CONF_API_KEY],
                 )
             except Exception as exception:  # noqa: BLE001
                 errors["base"] = self._map_exception_to_error(exception)
@@ -219,10 +212,10 @@ class AftershipConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=get_reauth_schema(entry.data.get(CONF_USERNAME, "")),
+            data_schema=get_reauth_schema(entry.data.get(CONF_API_KEY, "")),
             errors=errors,
             description_placeholders={
-                "username": entry.data.get(CONF_USERNAME, ""),
+                "api_key": entry.data.get(CONF_API_KEY, ""),
             },
         )
 
