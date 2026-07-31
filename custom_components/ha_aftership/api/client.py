@@ -110,7 +110,9 @@ class AftershipApiClient:
                 msg,
             ) from exception
 
-    async def async_add_tracking(self, tracking_number: str, title: str | None = None) -> None:
+    async def async_add_tracking(
+        self, tracking_number: str, title: str | None = None, courier: str | None = None
+    ) -> None:
         """
         Add a new tracking to the API.
 
@@ -120,6 +122,7 @@ class AftershipApiClient:
         Args:
             tracking_number: The tracking number to add.
             title: The title for the tracking number.
+            courier: The courier for the tracking number.
 
         Raises:
             AftershipApiClientError: For API errors.
@@ -128,6 +131,8 @@ class AftershipApiClient:
         req.tracking_number = tracking_number
         if title:
             req.title = title
+        if courier:
+            req.slug = courier
         try:
             await self.hass.async_add_executor_job(
                 self._client.tracking.create_tracking,
