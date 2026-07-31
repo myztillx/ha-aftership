@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from custom_components.ha_aftership.const import DOMAIN, LOGGER
+from custom_components.ha_aftership.const import DOMAIN, LOGGER, SERVICE_ADD_PACKAGE
+from custom_components.ha_aftership.service_actions.add_package_service import SERVICE_ADD_PACKAGE_SCHEMA, add_package
 from custom_components.ha_aftership.service_actions.example_service import (
     async_handle_example_action,
     async_handle_reload_data,
@@ -62,6 +63,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             DOMAIN,
             SERVICE_EXAMPLE_ACTION,
             handle_example_action,
+        )
+
+    if not hass.services.has_service(DOMAIN, SERVICE_ADD_PACKAGE):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_ADD_PACKAGE,
+            add_package,
+            schema=SERVICE_ADD_PACKAGE_SCHEMA,
         )
 
     if not hass.services.has_service(DOMAIN, SERVICE_RELOAD_DATA):

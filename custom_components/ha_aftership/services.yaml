@@ -1,30 +1,45 @@
 # yaml-language-server: $schema=../../schemas/yaml/services_schema.yaml
 # Describes the format for available services for ha_aftership
 
-example_action:
-  name: Example Action
-  description: Execute an example action (dummy service for demonstration)
+add_package:
+  #description: Add a package to AfterShip for tracking.
   fields:
-    action_type:
-      name: Action Type
-      description: The type of action to perform
-      required: false
-      default: default
-      example: "update"
+    config_entry_id:
+      required: true
       selector:
-        select:
-          options:
-            - "default"
-            - "update"
-            - "reset"
-    target_value:
-      name: Target Value
-      description: The target value for the action
+        config_entry:
+          integration: ha_aftership
+    tracking_number:
+      #description: The tracking number to add.
+      #example: "1Z999AA10123456784"
+      required: true
+      selector:
+        text:
+    title:
+      #description: The title for the tracking number.
+      #example: "My Package"
       required: false
-      example: "new_value"
+      selector:
+        text:
+    courier:
+      #description: The courier code for the tracking number.
+      #example: "USPS"
+      required: false
       selector:
         text:
 
-reload_data:
-  name: Reload Data
-  description: Force a refresh of the integration data from the API
+#remove_tracking:
+#  description: Remove a tracking number from AfterShip.
+#  fields:
+#    tracking_number:
+#      description: The tracking number to remove.
+#      example: "1Z999AA10123456784"
+#      required: true
+
+#update_tracking:
+#  description: Update a tracking number in AfterShip.
+#  fields:
+#    tracking_number:
+#      description: The tracking number to update.
+#      example: "1Z999AA10123456784"
+#      required: true
