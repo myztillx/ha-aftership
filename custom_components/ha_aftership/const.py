@@ -16,3 +16,9 @@ PARALLEL_UPDATES = 1
 # Default configuration values
 DEFAULT_UPDATE_INTERVAL_HOURS = 1
 DEFAULT_ENABLE_DEBUGGING = False
+
+SERVICE_ADD_PACKAGE = "add_package"
+
+ATTR_TRACKING_NUMBER = "tracking_number"
+ATTR_TITLE = "title"
+ATTR_COURIER = "courier"

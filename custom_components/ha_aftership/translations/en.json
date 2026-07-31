@@ -149,5 +149,30 @@
         }
       }
     }
+  },
+  "services": {
+    "add_package": {
+      "name": "Add Package",
+      "description": "Add a package to AfterShip for tracking.",
+      "fields": {
+        "config_entry_id": {
+          "description": "The selected service to add the package to.",
+          "name": "Aftership service"
+        },
+        "tracking_number": {
+          "name": "Tracking Number",
+          "description": "The tracking number of the package."
+
+        },
+        "title": {
+          "name": "Title",
+          "description": "An optional title for the package."
+        },
+        "courier": {
+          "name": "Courier",
+          "description": "An optional courier slug for the package."
+        }
+      }
+    }
   }
 }
