@@ -23,10 +23,9 @@ SERVICE_ADD_PACKAGE_SCHEMA: Final = vol.Schema(
 
 async def add_package(call: ServiceCall) -> None:
     """Handle the add_package service call."""
-    # This is a placeholder for the actual implementation
     LOGGER.info("Add package service called with data: %s", call.data)
-    # Here you would implement the logic to add a package using the Aftership API
-    tracking_number = call.data[ATTR_TRACKING_NUMBER]
+
+    tracking_number: str = call.data[ATTR_TRACKING_NUMBER]
     title = call.data.get(ATTR_TITLE, None)
     courier = call.data.get(ATTR_COURIER, None)
 
