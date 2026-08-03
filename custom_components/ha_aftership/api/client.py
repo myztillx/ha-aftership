@@ -156,6 +156,50 @@ class AftershipApiClient:
         """
         await self.hass.async_add_executor_job(self._client.tracking.delete_tracking_by_id, tracking_id)
 
+    async def async_remove_tracking_by_number(self, tracking_number: str) -> None:
+        """
+        Remove a tracking from the API by its tracking number.
+
+        Because the Aftership API typically requires a tracking ID (or slug + tracking number)
+        to delete a package, this method fetches the current trackings to find the
+        matching ID first.
+
+        Args:
+            tracking_number: The tracking number to remove.
+
+        Raises:
+            AftershipApiClientError: For API errors or if the tracking number is not found.
+        """
+        try:
+            # Fetch current trackings to find the tracking ID
+            response = await self.async_get_trackings()
+
+            # Extract the tracking list
+            trackings = (
+                response.data.trackings
+                if response
+                and hasattr(response, "data")
+                and response.data
+                and hasattr(response.data, "trackings")
+                and response.data.trackings
+                else []
+            )
+
+            # Find the ID for the given tracking number
+            tracking_id = next(
+                (pkg.id for pkg in trackings if pkg.tracking_number == tracking_number),
+                None,
+            )
+            if not tracking_id:
+                return
+
+            await self.async_remove_tracking_by_id(tracking_id)
+        except Exception as exception:
+            msg = f"Failed to remove AfterShip tracking: {exception}"
+            raise AftershipApiClientError(
+                msg,
+            ) from exception
+
     async def async_test_connection(self) -> bool:
         """
         Test the connection to the Aftership API.

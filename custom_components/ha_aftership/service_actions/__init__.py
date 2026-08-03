@@ -10,6 +10,10 @@ from custom_components.ha_aftership.service_actions.example_service import (
     async_handle_example_action,
     async_handle_reload_data,
 )
+from custom_components.ha_aftership.service_actions.remove_package_service import (
+    SERVICE_REMOVE_PACKAGE_SCHEMA,
+    remove_package,
+)
 from homeassistant.core import ServiceCall
 
 if TYPE_CHECKING:
@@ -71,6 +75,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             SERVICE_ADD_PACKAGE,
             add_package,
             schema=SERVICE_ADD_PACKAGE_SCHEMA,
+        )
+
+    if not hass.services.has_service(DOMAIN, "remove_package"):
+        hass.services.async_register(
+            DOMAIN,
+            "remove_package",
+            remove_package,
+            schema=SERVICE_REMOVE_PACKAGE_SCHEMA,
         )
 
     if not hass.services.has_service(DOMAIN, SERVICE_RELOAD_DATA):

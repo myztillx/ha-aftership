@@ -173,6 +173,20 @@
           "description": "An optional courier slug for the package."
         }
       }
+    },
+    "remove_package": {
+      "name": "Remove package",
+      "description": "Remove a package from Aftership.",
+      "fields": {
+        "config_entry_id": {
+          "description": "The selected service to remove the package from.",
+          "name": "Aftership service"
+        },
+        "tracking_number": {
+          "name": "Tracking Number",
+          "description": "The tracking number of the package to remove."
+        }
+      }
     }
   }
 }

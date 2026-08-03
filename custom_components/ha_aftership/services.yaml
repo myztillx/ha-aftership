@@ -28,13 +28,20 @@ add_package:
       selector:
         text:
 
-#remove_tracking:
-#  description: Remove a tracking number from AfterShip.
-#  fields:
-#    tracking_number:
-#      description: The tracking number to remove.
-#      example: "1Z999AA10123456784"
-#      required: true
+remove_package:
+  #description: Remove a tracking number from AfterShip.
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: ha_aftership
+    tracking_number:
+      #description: The tracking number to remove.
+      #example: "1Z999AA10123456784"
+      required: true
+      selector:
+        text:
 
 #update_tracking:
 #  description: Update a tracking number in AfterShip.
