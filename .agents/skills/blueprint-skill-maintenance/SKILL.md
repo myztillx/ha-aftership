@@ -52,9 +52,9 @@ then validate with W" is a procedure. When a skill needs a rule in order to make
 it. Two copies of a rule become two contradicting rules within a release or two.
 
 Copilot, VS Code and Claude Code all inject the matching instructions file automatically when a file of that type is
-touched. Codex does not — its nested `AGENTS.md` support keys off the working directory, not the edited file. That is
+touched. Codex and OpenCode do not — their nested `AGENTS.md` support keys off directories, not file types. That is
 why the pointer at the top of each skill names _what_ is in the instructions file rather than just linking it: for
-Codex the skill is the only bridge.
+them the skill is the only bridge.
 
 **The pointer runs both ways, and a pair is only done when both ends exist.** The skill opens with a
 `**Read … first**` block; its instructions file opens with a `**Procedure:**` line naming the skill. They cover
@@ -119,8 +119,8 @@ that repository and excluded from template sync, so the checker requires new syn
 README; it still verifies that every existing link in `AGENTS.md` resolves. It cannot check that the "Use when" text
 is any good.
 
-No other file carries a catalogue, and none should. Codex and Copilot read `AGENTS.md` natively, and `CLAUDE.md`
-imports it — all three already have the table. Every extra copy is another place to forget.
+No other file carries a catalogue, and none should. Codex, Copilot and OpenCode read `AGENTS.md` natively, and
+`CLAUDE.md` imports it — all of them already have the table. Every extra copy is another place to forget.
 
 `README.md` and `CONTRIBUTING.md` describe the set by theme rather than by name, so they only need touching when a
 whole new area appears. Neither states a skill count — do not reintroduce one, it is a maintenance trap that goes
@@ -143,15 +143,36 @@ go, remove the directory, all catalogue entries, the `**Procedure:**` pointer in
 cross-links from other skills. `script/skills-check` covers all four — it link-checks the skills, the two catalogues
 and `.agents/instructions/` — so run it and fix what it names rather than hunting by hand.
 
+## A change the template sync cannot deliver
+
+A file listed in `.templatesyncignore` never reaches the repositories made from the blueprint, and neither does a step
+only their maintainer can take. When a change needs either — a new section in `AGENTS.md`, a new step in
+`template-sync.yml`, a new exclusion entry — add an entry at the top of
+[`blueprint-update/references/manual-steps.md`](../blueprint-update/references/manual-steps.md) in the same change:
+an id, the date, a check that passes once it is done, and what to do and why. A watched file's diff alone is not
+enough when the change is easy to miss or needs a decision; the entry is what puts it in front of the developer.
+`script/blueprint-update` watches its files through `WATCHED` in `script/.lib/blueprint_update.py` — extend that list
+when the blueprint starts maintaining another excluded file.
+
 ## After a Home Assistant version bump
 
 `script/ha-version-sync` changes the pinned version; several skills make version-specific claims that may now be
 stale. Re-verify against the newly installed source, not from memory:
 
-- `ha-modern-apis` — the whole deprecation table, plus `references/deprecations.md`
+- `ha-modern-apis` — `references/deprecations.md` and `references/device-registry.md`: move rows whose "Removed in"
+  version has arrived to "gone", and add new `breaks_in_ha_version` entries
 - `ha-quality-review` — `references/quality-scale-rules.md` against `script/hassfest/quality_scale.py` upstream
-- `ha-entity-platform`, `ha-config-flow` — any API named in a code sample
-- `ha-testing` — new `DeprecationWarning`s become test failures, because warnings are errors here
+- `ha-entity-platform`, `ha-config-flow`, `ha-service-action` — any API named in a code sample, including
+  `references/triggers-conditions.md`, which tracks a young API
+- `ha-testing` — Home Assistant's own deprecations are logged, not raised, so run the suite: the autouse
+  deprecation fixture in `tests/conftest.py` fails on them
+- Every `(HA YYYY.M+)` marker, across all skills and instructions files: once the **minimum** version in `hacs.json`
+  reaches it, the new API becomes the default and the marker and the old way go. Reaching it in the pinned version
+  only is not enough, since code still has to run on the minimum.
+
+The contributor documentation follows Home Assistant's development branch, so it describes upcoming APIs before any
+release ships them. Audit the skills against it per area — `https://contributors.home-assistant.io/<area>/llms-full.txt`
+holds an area's full text — and check each claim against the installed source before writing it down.
 
 ## Do not
 
