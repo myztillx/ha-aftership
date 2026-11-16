@@ -54,7 +54,7 @@
     // Python and the CLI tools come from mise.toml; apt keeps system libraries and tools without a mise binary.
     // Node stays a feature because the agent CLI features below need it at image build time.
     "ghcr.io/devcontainers-extra/features/mise:1": {
-      "version": "2026.10.22"
+      "version": "2026.11.3"
     },
     "ghcr.io/devcontainers/features/node:2": {
       "version": "lts"
