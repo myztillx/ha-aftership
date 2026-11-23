@@ -29,6 +29,8 @@ PRUNE_PATHS=(
     "docs/blueprint"
     ".agents/skills/blueprint-skill-maintenance"
     "script/tests/test_initialize.py"
+    "script/import-overlay"
+    "script/tests/test_import_overlay.py"
 )
 PROJECT_OWNED_PATHS=(
     ".devcontainer/project-feature"
@@ -73,7 +75,21 @@ done
 if [[ -f $SECTION_FILE ]] && grep -qF "$SECTION_START" "$SECTION_FILE"; then
     found=$((found + 1))
     if $APPLY; then
-        sed -i "\|$SECTION_START|,\|$SECTION_END|d" "$SECTION_FILE"
+        # Joins the blank lines on both sides of a removed section, which markdownlint would reject (MD012), and drops
+        # them at the start or end of the file. Blank lines anywhere else, code blocks included, are left alone.
+        pruned=$(awk -v s="$SECTION_START" -v e="$SECTION_END" '
+            index($0, s) { skip = 1; next }
+            skip { if (index($0, e)) { skip = 0; removed = 1 } next }
+            /^[[:space:]]*$/ { pending[blank++] = $0; next }
+            {
+                n = removed ? (printed && blank ? 1 : 0) : blank
+                for (i = 0; i < n; i++) print pending[i]
+                blank = 0; removed = 0; printed = 1
+                print
+            }
+            END { if (!removed) for (i = 0; i < blank; i++) print pending[i] }
+        ' "$SECTION_FILE")
+        printf '%s\n' "$pruned" >"$SECTION_FILE"
         log_success "Removed blueprint-only sections from $SECTION_FILE"
     else
         log_info "Would remove blueprint-only sections from $SECTION_FILE"

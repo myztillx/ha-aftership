@@ -45,6 +45,9 @@ where there can only ever be one — the only case for an optional `config_entry
 If an entity would model it better, say so before implementing — a `button` or `number` entity is more discoverable
 than an action.
 
+What automations need from the action — the shape of the response data, defaults, which errors `continue_on_error`
+can skip — is in [`ha-user-experience`](../ha-user-experience/SKILL.md#7-automations).
+
 ## Procedure
 
 ### 1. Describe it in `services.yaml`

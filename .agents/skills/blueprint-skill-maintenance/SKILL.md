@@ -41,7 +41,7 @@ Every piece of guidance goes in exactly one place. Before writing anything into 
 The last row is decided by audience, not by subject. `docs/development/CUSTOMIZATION.md` describes hooks and template
 sync — blueprint mechanisms both — but it addresses someone who received the blueprint, so it stays there. Why the
 blueprint mints its development token offline addresses whoever maintains the blueprint, so it goes in
-[`docs/blueprint/DECISIONS.md`](../../../docs/blueprint/DECISIONS.md).
+[`docs/blueprint/decisions/`](../../../docs/blueprint/decisions/README.md).
 
 `initialize.sh` deletes `docs/blueprint/` wholesale, and `docs/` is already in `.templatesyncignore`, so nothing there
 needs further registration. Anything blueprint-only **outside** that directory needs all three steps — see
@@ -92,7 +92,7 @@ not a reliable substitute.
 ## Adding a skill to the shipped set
 
 1. Decide it is really a skill and not a rule (see the seam above), and that no existing skill should absorb it.
-   Name it `ha-*` for Home Assistant integration work or `blueprint-*` for this repository's tooling — both prefixes
+   Name it `ha-*` for Home Assistant integration work or `blueprint-*` for this repository's tooling and agent workflow — both prefixes
    are reserved for the shipped set, so downstream repositories can use their own without risking a collision. Keep
    the name short: it is what people type to invoke the skill.
 2. Create `.agents/skills/<name>/SKILL.md`. Use the `<domain>` and `{ClassPrefix}` placeholders — never the concrete

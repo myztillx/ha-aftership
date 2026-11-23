@@ -191,3 +191,71 @@ def test_blocks_invalid_payload(tmp_path: Path) -> None:
 def test_finds_a_push_behind_shell_syntax(repository: Path, command: str) -> None:
     """A push hidden behind newlines, subshells, keywords, substitutions or quoting is still inspected."""
     assert _explain(command, repository) == _other_refs("--all")
+
+
+REMIND = Path(__file__).parents[2] / ".agents" / "hooks" / "remind-change-review.sh"
+HACI_REVIEW = "haci-review@ha-custom-integration-skills"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("command", "reminds"),
+    [
+        pytest.param("gh pr ready 12", True, id="ready"),
+        pytest.param("script/test && gh pr ready", True, id="ready-after-a-chain"),
+        pytest.param("gh pr ready --undo", False, id="back-to-draft"),
+        pytest.param('echo "gh pr ready"', False, id="only-mentioned"),
+        pytest.param("git status", False, id="unrelated"),
+    ],
+)
+def test_change_review_reminder_before_a_pull_request_leaves_draft(
+    tmp_path: Path, command: str, *, reminds: bool
+) -> None:
+    """The reminder adds context before gh pr ready and never blocks the call."""
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text(json.dumps({"enabledPlugins": {HACI_REVIEW: True}}))
+    result = subprocess.run(
+        ["bash", str(REMIND)],
+        cwd=tmp_path,
+        input=json.dumps({"tool_input": {"command": command}}),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    if reminds:
+        assert "haci-change-review" in json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+    else:
+        assert result.stdout == ""
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("project", "local"),
+    [
+        pytest.param(None, None, id="not-enabled"),
+        pytest.param(True, False, id="turned-off-locally"),
+        pytest.param(False, None, id="off-in-the-project"),
+    ],
+)
+def test_change_review_reminder_is_silent_without_the_plugin(
+    tmp_path: Path, project: bool | None, local: bool | None
+) -> None:
+    """A developer who turned haci-review off gets no reminder about a review pass it no longer runs."""
+    (tmp_path / ".claude").mkdir()
+    if project is not None:
+        (tmp_path / ".claude" / "settings.json").write_text(json.dumps({"enabledPlugins": {HACI_REVIEW: project}}))
+    if local is not None:
+        (tmp_path / ".claude" / "settings.local.json").write_text(json.dumps({"enabledPlugins": {HACI_REVIEW: local}}))
+    result = subprocess.run(
+        ["bash", str(REMIND)],
+        cwd=tmp_path,
+        input=json.dumps({"tool_input": {"command": "gh pr ready"}}),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout == ""

@@ -161,8 +161,11 @@ See [Integration Setup Failures](https://contributors.home-assistant.io/core/int
   `PERCENTAGE` or the `CONCENTRATION_*` constants
   ([`deprecations.md`](../skills/ha-modern-apis/references/deprecations.md#entities))
 - Construct compound units if no combined constant exists: `f"{UnitOfLength.METERS}/{UnitOfTime.SECONDS}"`
-- **Do not convert units yourself.** Set `native_unit_of_measurement` and let Home Assistant convert according to
-  `hass.config.units`. `hass.config.language` and `.country` are there too, when an API needs a locale.
+- **Do not convert units Home Assistant can convert.** Set `native_unit_of_measurement` and let Home Assistant convert
+  according to `hass.config.units`. Where the device class has no converter — money, currency subunits, prices per
+  unit — converting is the integration's job
+  ([`ha-user-experience`](../skills/ha-user-experience/SKILL.md#units-users-think-in)). `hass.config.language`,
+  `.country` and `.currency` are there too, when an API needs a locale.
 
 **Time and Timestamps:**
 

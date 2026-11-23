@@ -2,12 +2,12 @@
 name: ha-testing
 description: >-
   Write, fix, or extend automated tests for this Home Assistant custom integration using pytest and
-  pytest-homeassistant-custom-component. Use when asked to "add tests", "write a test", "the tests fail", "improve
+  pytest-homeassistant. Use when asked to "add tests", "write a test", "the tests fail", "improve
   coverage", "add a regression test", "test the config flow", "update snapshots", or when a behavioural change
   needs verification before it can be called done. Covers the tests/ layout, the conftest.py fixtures this project
   needs, mocking the API client, config flow and entity test patterns, registry assertions, syrupy snapshots,
   freezing time, and the script/test commands. SYMPTOMS — load this if you are about to: instantiate an entity
-  class directly instead of asserting on `hass.states`; write a test without `enable_custom_integrations`; use
+  class directly instead of asserting on `hass.states`; redefine a fixture `pytest-homeassistant` provides; use
   `time.sleep` instead of `async_fire_time_changed`; silence a DeprecationWarning to make the suite pass; or
   commit a snapshot you have not read.
 ---
@@ -25,6 +25,10 @@ scaffolding and the judgement calls.
 ## When a test is required
 
 - Behavioural change, bug fix, or regression → add a proportionate test.
+- **The test sits at the seam where the bug occurred** — the coordinator for a parsing bug, `hass.states` for an entity
+  bug. A test at a shallower layer passes while the bug lives on; if no seam can reproduce it, say so as a finding.
+  An existing test that missed the bug sits at the wrong seam — move it rather than add a second. Name the test after
+  the behaviour, not the issue number.
 - **A bug fix starts with a failing test.** Write it, watch it fail for the reported reason, then fix — a test written
   after the fix may never have been able to fail.
 - Documentation-only, formatting-only, or anything that cannot affect runtime → no test needed.
@@ -35,17 +39,12 @@ scaffolding and the judgement calls.
 
 Use these by name instead of defining a variant per file — every existing test depends on them:
 
-- `auto_enable_custom_integrations` — autouse; without `enable_custom_integrations` a custom integration does not load
-  in a test at all.
 - `config_entry` — a `MockConfigEntry`, not yet added to `hass`.
 - `mock_api` — the `AsyncMock` that stands in for the data source; set `return_value` or `side_effect` per test.
 - `init_integration` — adds `config_entry`, sets it up with `mock_api` active, and returns the loaded entry.
 
 A library client instead of our own needs a different `mock_api` — see
-[`references/recipes.md`](references/recipes.md#mock_api-for-a-third-party-library-client). Recorded payloads go in
-a `fixtures/` folder: `load_fixture("device.json")` and `load_json_object_fixture("device.json")` resolve against the
-one next to the calling test file. Never pass `DOMAIN` as their second argument — that points at Core's
-`tests/components/<domain>/fixtures/`, which does not exist here.
+[`references/recipes.md`](references/recipes.md#mock_api-for-a-third-party-library-client).
 
 ## Layout
 
