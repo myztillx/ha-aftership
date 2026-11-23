@@ -51,59 +51,63 @@ the name to `probatio`, and only the type checker complains.
 
 ## Config flow
 
-| Do not use                                                                                                            | Use instead                                                                                                                   | Removed in |
-| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `FlowResult`                                                                                                          | `ConfigFlowResult`                                                                                                            | —          |
-| `self.hass.config_entries.async_get_entry(...)` in reauth                                                             | `self._get_reauth_entry()` / `self._get_reconfigure_entry()`                                                                  | —          |
-| Manual update + `async_abort` + reload                                                                                | `self.async_update_reload_and_abort(entry, data_updates=…)`                                                                   | —          |
-| Manual unique-ID comparison                                                                                           | `self._abort_if_unique_id_mismatch(reason="wrong_device")`                                                                    | —          |
-| `config_entries.OptionsFlow` storing `self.config_entry`                                                              | The base class provides `self.config_entry`                                                                                   | —          |
-| `self.show_advanced_options` / `context["show_advanced_options"]`                                                     | Always show the field; group rarely used ones in a form section. The property already returns `True`, the context key is gone | 2027.6     |
-| `async_show_form` / `async_show_menu` / `async_show_progress` / `async_external_step` without `step_id` (HA 2026.11+) | Pass `step_id` — the step method's name without `async_step_`                                                                 | 2027.5     |
-| YAML `async_setup_platform` for a device/service integration                                                          | Config flow only (ADR-0010)                                                                                                   | —          |
+| Do not use                                                                                              | Use instead                                                                                                                                                                                                                                                       | Removed in |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `FlowResult`                                                                                            | `ConfigFlowResult`                                                                                                                                                                                                                                                | —          |
+| `self.hass.config_entries.async_get_entry(...)` in reauth                                               | `self._get_reauth_entry()` / `self._get_reconfigure_entry()`                                                                                                                                                                                                      | —          |
+| Manual update + `async_abort` + reload                                                                  | `self.async_update_reload_and_abort(entry, data_updates=…)`                                                                                                                                                                                                       | —          |
+| Manual unique-ID comparison                                                                             | `self._abort_if_unique_id_mismatch(reason="wrong_device")`                                                                                                                                                                                                        | —          |
+| `config_entries.OptionsFlow` storing `self.config_entry`                                                | The base class provides `self.config_entry`                                                                                                                                                                                                                       | —          |
+| `self.show_advanced_options` / `context["show_advanced_options"]`                                       | Always show the field; group rarely used ones in a form section. The property already returns `True`, the context key is gone                                                                                                                                     | 2027.6     |
+| `async_show_form` / `async_show_menu` / `async_show_progress` / `async_external_step` without `step_id` | Pass `step_id` — the step method's name without `async_step_`                                                                                                                                                                                                     | 2027.5     |
+| `return True` / `return False` from `async_setup_entry`, `async_unload_entry` or `async_migrate_entry`  | Return nothing and raise a `ConfigEntry*` exception on failure; `async_unload_platforms_or_raise(entry, PLATFORMS)` replaces `return await async_unload_platforms(...)`. A custom integration's boolean still works, `False` becomes a generic `ConfigEntryError` | —          |
+| YAML `async_setup_platform` for a device/service integration                                            | Config flow only ([ADR-0010](https://github.com/home-assistant/architecture/blob/master/adr/0010-integration-configuration.md))                                                                                                                                   | —          |
 
 ## Entities
 
-| Do not use                                                                      | Use instead                                                               | Removed in    |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------- |
-| `DEVICE_CLASS_*` module constants                                               | `SensorDeviceClass.*`, `BinarySensorDeviceClass.*`, …                     | gone          |
-| `EntityDescription(name="Temperature")`                                         | `translation_key="temperature"` + `translations/en.json`                  | —             |
-| `EntityDescription(icon="mdi:x")`                                               | `icons.json`                                                              | —             |
-| `self.schedule_update_ha_state()` from async code                               | `self.async_write_ha_state()`                                             | —             |
-| A `DOORBELL` event entity whose `event_types` lack `DoorbellEventType.RING`     | List `DoorbellEventType.RING`                                             | 2027.4        |
-| `async_update()` on a coordinator-backed entity                                 | Read `self.coordinator.data`                                              | —             |
-| `_attr_name` when `has_entity_name` is set                                      | `translation_key`, or `_attr_name = None` for the main entity             | —             |
-| Setting `entity_id` with an invalid format                                      | Do not set `entity_id`; Home Assistant derives it                         | 2027.2        |
-| Setting `entity_id` with another platform's domain                              | Same                                                                      | 2027.5        |
-| `PERCENTAGE` as a unit of measurement                                           | `UnitOfRatio.PERCENTAGE` — deprecated in the docs, no runtime warning yet | — (docs only) |
-| `CONCENTRATION_GRAMS/MILLIGRAMS/MICROGRAMS_PER_CUBIC_METER`, `…_PER_CUBIC_FOOT` | `UnitOfDensity.*`                                                         | 2027.8        |
-| `CONCENTRATION_PARTS_PER_MILLION` / `…_PER_BILLION`                             | `UnitOfRatio.PARTS_PER_MILLION` / `PARTS_PER_BILLION`                     | 2027.8        |
-| `TemperatureConverter.convert_interval`                                         | `TemperatureDeltaConverter.convert`                                       | 2026.12       |
-| `AirQualityEntity` (`air_quality` platform)                                     | One sensor per reading, with a device class (`PM25`, `OZONE`, `AQI`, …)   | — (docs only) |
+| Do not use                                                                         | Use instead                                                                                                | Removed in    |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------- |
+| `DEVICE_CLASS_*` module constants                                                  | `SensorDeviceClass.*`, `BinarySensorDeviceClass.*`, …                                                      | gone          |
+| `EntityDescription(name="Temperature")`                                            | `translation_key="temperature"` + `translations/en.json`                                                   | —             |
+| `EntityDescription(icon="mdi:x")`                                                  | `icons.json`                                                                                               | —             |
+| `self.schedule_update_ha_state()` from async code                                  | `self.async_write_ha_state()`                                                                              | —             |
+| A `DOORBELL` event entity whose `event_types` lack `DoorbellEventType.RING`        | List `DoorbellEventType.RING`                                                                              | 2027.4        |
+| `async_update()` on a coordinator-backed entity                                    | Read `self.coordinator.data`                                                                               | —             |
+| `_attr_name` when `has_entity_name` is set                                         | `translation_key`, or `_attr_name = None` for the main entity                                              | —             |
+| Setting `entity_id` with an invalid format                                         | Do not set `entity_id`; Home Assistant derives it                                                          | 2027.2        |
+| Setting `entity_id` with another platform's domain                                 | Same                                                                                                       | 2027.5        |
+| `PERCENTAGE` as a unit of measurement                                              | `UnitOfRatio.PERCENTAGE` — deprecated in the docs, no runtime warning yet                                  | — (docs only) |
+| `CONCENTRATION_GRAMS/MILLIGRAMS/MICROGRAMS_PER_CUBIC_METER`, `…_PER_CUBIC_FOOT`    | `UnitOfDensity.*`                                                                                          | 2027.8        |
+| `CONCENTRATION_PARTS_PER_MILLION` / `…_PER_BILLION`                                | `UnitOfRatio.PARTS_PER_MILLION` / `PARTS_PER_BILLION`                                                      | 2027.8        |
+| `TemperatureConverter.convert_interval`                                            | `TemperatureDeltaConverter.convert`                                                                        | 2026.12       |
+| An add or remove hook (`async_added_to_hass`, …) without `async_entity_id_changed` | Implement `async_entity_id_changed`; otherwise a rename removes and re-adds the entity                     | 2027.11       |
+| `RestoreStateData.last_states`                                                     | `RestoreStateData.async_get_stored_state(entity_id)`; `RestoreEntity.async_get_last_state()` is unaffected | gone          |
+| `AirQualityEntity` (`air_quality` platform)                                        | One sensor per reading, with a device class (`PM25`, `OZONE`, `AQI`, …)                                    | — (docs only) |
 
 ### Per platform
 
-| Platform         | Do not use                                                                                                         | Use instead                                                          | Removed in       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ---------------- |
-| `light`          | Mireds — `color_temp`, `min_mireds`, `max_mireds`                                                                  | Kelvin only — `color_temp_kelvin`, `_attr_min/max_color_temp_kelvin` | gone             |
-| `light`          | `_attr_min_color_temp_kelvin` / `_attr_max_color_temp_kelvin = None`                                               | A real value, e.g. `DEFAULT_MIN_KELVIN` / `DEFAULT_MAX_KELVIN`       | overdue (2026.8) |
-| `vacuum`         | `battery_level`, `VacuumEntityFeature.BATTERY`                                                                     | A separate battery sensor                                            | gone             |
-| `media_player`   | `MediaPlayerState.STANDBY`                                                                                         | `MediaPlayerState.OFF` or `IDLE`                                     | overdue (2026.8) |
-| `device_tracker` | The legacy platform API (`get_scanner`, `setup_scanner` and their `async_` forms, the `device_tracker.see` action) | `TrackerEntity` / `ScannerEntity` from a config entry                | 2027.5           |
-| `device_tracker` | `battery_level` on any tracker entity                                                                              | A separate battery sensor                                            | 2027.7           |
-| `device_tracker` | `location_name` on `TrackerEntity`                                                                                 | `in_zones` (zone entity IDs), or a separate sensor                   | 2027.7           |
-| `device_tracker` | `TrackerEntity`, `ScannerEntity`, `SourceType` from `device_tracker.config_entry`                                  | Import from `homeassistant.components.device_tracker`                | 2027.6           |
-| `device_tracker` | `ATTR_LATITUDE` / `ATTR_LONGITUDE` from `device_tracker.const`                                                     | `EntityStateAttribute.LATITUDE` / `LONGITUDE`                        | 2027.2           |
+| Platform                  | Do not use                                                                                                         | Use instead                                                                                             | Removed in       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------- |
+| `light`                   | Mireds — `color_temp`, `min_mireds`, `max_mireds`                                                                  | Kelvin only — `color_temp_kelvin`, `_attr_min/max_color_temp_kelvin`                                    | gone             |
+| `light`                   | `_attr_min_color_temp_kelvin` / `_attr_max_color_temp_kelvin = None`                                               | A real value, e.g. `DEFAULT_MIN_KELVIN` / `DEFAULT_MAX_KELVIN`                                          | overdue (2026.8) |
+| `vacuum`                  | `battery_level`, `VacuumEntityFeature.BATTERY`                                                                     | A separate battery sensor                                                                               | gone             |
+| `media_player`            | `MediaPlayerState.STANDBY`                                                                                         | `MediaPlayerState.OFF` or `IDLE`                                                                        | overdue (2026.8) |
+| `device_tracker`          | The legacy platform API (`get_scanner`, `setup_scanner` and their `async_` forms, the `device_tracker.see` action) | `TrackerEntity` / `ScannerEntity` from a config entry                                                   | 2027.5           |
+| `device_tracker`          | `battery_level` on any tracker entity                                                                              | A separate battery sensor                                                                               | 2027.7           |
+| `device_tracker`          | `location_name` on `TrackerEntity`                                                                                 | `in_zones` (zone entity IDs), or a separate sensor                                                      | 2027.7           |
+| `device_tracker`          | `TrackerEntity`, `ScannerEntity`, `SourceType` from `device_tracker.config_entry`                                  | Import from `homeassistant.components.device_tracker`                                                   | 2027.6           |
+| `device_tracker`          | `ATTR_LATITUDE` / `ATTR_LONGITUDE` from `device_tracker.const`                                                     | `EntityStateAttribute.LATITUDE` / `LONGITUDE`                                                           | 2027.2           |
+| `climate`, `water_heater` | `current_temperature`, `target_temperature[_high\|_low]`, `temperature_unit` (and their `_attr_` forms)            | The same with a `native_` prefix; `min_temp`, `max_temp` and `target_temperature_step` keep their names | 2027.11          |
 
 ## Service actions, conditions and scripts
 
-| Do not use                                                                                                                                                        | Use instead                                                                           | Removed in                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------- |
-| `hass` as first argument to `verify_domain_control`, `extract_entity_ids`, `async_extract_entities`, `async_extract_entity_ids`, `async_extract_config_entry_ids` | Drop it — `call.hass` carries it, e.g. `@verify_domain_control(DOMAIN)`               | gone                       |
-| A `device:` filter under `target:` in `services.yaml`                                                                                                             | Remove it; filter on `entity:` only. Hassfest already rejects it                      | 2026.11 (validation fails) |
-| Calling a condition object, `condition(hass, variables)`                                                                                                          | `condition.async_check(variables=…)`, then `condition.async_unload()` when done       | 2027.1                     |
-| A `Script` you create and forget                                                                                                                                  | `await script.async_unload()` when it is no longer needed                             | —                          |
-| `homeassistant.components.labs.async_listen`                                                                                                                      | `async_subscribe_preview_feature` (the listener is a coroutine taking the event data) | 2027.3                     |
+| Do not use                                                                                                                                                        | Use instead                                                                           | Removed in        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------- |
+| `hass` as first argument to `verify_domain_control`, `extract_entity_ids`, `async_extract_entities`, `async_extract_entity_ids`, `async_extract_config_entry_ids` | Drop it — `call.hass` carries it, e.g. `@verify_domain_control(DOMAIN)`               | gone              |
+| A `device:` filter under `target:` in `services.yaml`                                                                                                             | Remove it; filter on `entity:` only. Hassfest already rejects it                      | overdue (2026.11) |
+| Calling a condition object, `condition(hass, variables)`                                                                                                          | `condition.async_check(variables=…)`, then `condition.async_unload()` when done       | 2027.1            |
+| A `Script` you create and forget                                                                                                                                  | `await script.async_unload()` when it is no longer needed                             | —                 |
+| `homeassistant.components.labs.async_listen`                                                                                                                      | `async_subscribe_preview_feature` (the listener is a coroutine taking the event data) | 2027.3            |
 
 ## Async, I/O and dependencies
 
@@ -123,27 +127,7 @@ the name to `probatio`, and only the type checker complains.
 
 ## Recorder statistics
 
-| Do not use                                                                                               | Use instead                     | Removed in |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------- | ---------- |
-| `async_import_statistics` / `async_add_external_statistics` metadata without `mean_type` or `unit_class` | Set both in `StatisticMetaData` | 2026.11    |
-| `async_update_statistics_metadata(new_unit_of_measurement=…)` without `new_unit_class`                   | Pass `new_unit_class` as well   | 2026.11    |
-
-## Upcoming (HA 2026.11+)
-
-Announced on the [developer blog](https://contributors.home-assistant.io/blog/), not in the pinned version yet. What
-to prepare for:
-
-- **Config entry functions may return `None`.** `async_setup_entry`, `async_unload_entry` and `async_migrate_entry`
-  either succeed or raise a `ConfigEntry*` exception; `hass.config_entries.async_unload_platforms_or_raise(entry,
-PLATFORMS)` replaces `return await async_unload_platforms(...)`. Returning a boolean stays supported for custom
-  integrations — `False` becomes a generic translated `ConfigEntryError`.
-- **`ConfigEntryNotReady(retry_after=seconds)`**, and `UpdateFailed(retry_after=…)` honoured during the first refresh.
-  On 2026.10 a rate limit at setup retries on the normal backoff.
-- **`RestoreStateData.last_states` is removed** — use `RestoreStateData.async_get_stored_state(entity_id)`.
-  `RestoreEntity.async_get_last_state()` is unaffected.
-- **Climate and water heater temperatures get a `native_` prefix** — `native_current_temperature`,
-  `native_target_temperature[_high|_low]`, `native_temperature_unit`. The old names log a warning and break in 2027.11.
-- **`Entity.async_entity_id_changed`.** An entity whose ID the user renames is updated in place instead of removed and
-  re-added. An entity that implements `async_added_to_hass`, `async_will_remove_from_hass` or
-  `async_prepare_to_add_to_hass` opts in by implementing it; without it, the old remove-and-add stays until 2027.11.
-- **`DeviceInfo` becomes a dataclass** — see [`device-registry.md`](device-registry.md#upcoming-ha-202611).
+| Do not use                                                                                               | Use instead                     | Removed in        |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------- |
+| `async_import_statistics` / `async_add_external_statistics` metadata without `mean_type` or `unit_class` | Set both in `StatisticMetaData` | overdue (2026.11) |
+| `async_update_statistics_metadata(new_unit_of_measurement=…)` without `new_unit_class`                   | Pass `new_unit_class` as well   | overdue (2026.11) |

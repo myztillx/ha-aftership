@@ -129,7 +129,8 @@ When `script/test` reports that the manifest schema's categories differ from the
 
 Raising the minimum version is a separate decision:
 [`ha-marketplace`](../ha-marketplace/SKILL.md#2-hacsjson--when-to-touch-it) for where it lives,
-[`ha-breaking-changes`](../ha-breaking-changes/SKILL.md) for why it is breaking.
+[`ha-breaking-changes`](../ha-breaking-changes/SKILL.md#1-recognise-it) for why it is not breaking and how to
+announce it.
 
 ## Do not
 

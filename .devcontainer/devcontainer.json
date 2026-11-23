@@ -36,9 +36,9 @@
     "PYTHONUNBUFFERED": "1",
     // Prevent Python from writing .pyc files to disk
     "PYTHONDONTWRITEBYTECODE": "1",
-    // Point uv to the named volume cache mount (avoids Docker creating ~/.cache as root).
+    // uv's cache shares the venv volume, so uv can hardlink packages into the venvs instead of copying them.
     // Must be set here so it reaches every process (extensions, uv, hass) from container start.
-    "UV_CACHE_DIR": "/home/vscode/uv-cache",
+    "UV_CACHE_DIR": "/home/vscode/ha-venv/.uv-cache",
     // mise keeps its tools in a named volume, mounted under $HOME for the same reason as the venv below.
     "MISE_DATA_DIR": "/home/vscode/mise-data",
     // Opening the repository in the container is the consent mise's trust prompt would ask for.
@@ -54,7 +54,7 @@
     // Python and the CLI tools come from mise.toml; apt keeps system libraries and tools without a mise binary.
     // Node stays a feature because the agent CLI features below need it at image build time.
     "ghcr.io/devcontainers-extra/features/mise:1": {
-      "version": "2026.10.22"
+      "version": "2026.11.12"
     },
     "ghcr.io/devcontainers/features/node:2": {
       "version": "lts"
@@ -130,8 +130,9 @@
         "python.analysis.diagnosticMode": "workspace",
         "python.defaultInterpreterPath": "/home/vscode/ha-venv/bin/python",
         "python.linting.pylintEnabled": false,
-        "python.terminal.activateEnvironment": true,
-        "python.terminal.activateEnvInCurrentTerminal": true,
+        // .devcontainer/.bashrc and .zshrc activate the venv in every terminal, before this extension could.
+        "python.terminal.activateEnvironment": false,
+        "python.terminal.activateEnvInCurrentTerminal": false,
         // .devcontainer/.env uses Bash syntax (sourced by setup scripts) — not a Python dotenv file.
         // Disable VS Code's env file injection to avoid parse errors and unexpected variable leakage.
         // Also clear python.envFile to avoid Python extension warnings about a configured env file.
@@ -162,6 +163,8 @@
           ".agents/hooks/**": false,
           ".claude/settings.json": false,
           ".codex/hooks.json": false,
+          ".codex/config.toml": false,
+          ".github/copilot/settings.json": false,
           ".opencode/**": false,
           "opencode.json": false,
           "opencode.jsonc": false,
@@ -236,18 +239,12 @@
   },
   "mounts": [
     // Named volume for HA Python venv: survives container rebuilds (but not "Rebuild and Clean Volumes").
-    // bootstrap already skips venv creation if the directory exists; uv pip install is fast for already-installed packages.
-    // Run "Dev Containers: Rebuild and Clean Volumes" after upgrading HA_VERSION to force a fresh install.
+    // Holds every Home Assistant environment, the Python builds they use and uv's cache, so a rebuild keeps them all.
     // Mounted directly under $HOME (not ~/.local/ha-venv) so Docker does NOT create ~/.local as root,
     // which would race with VS Code server trying to write ~/.cache/Microsoft at container start.
     // Ownership is fixed by onCreateCommand (Docker initializes volume mount points as root).
     // Volume name uses ${localWorkspaceFolderBasename} so each project on the host gets its own volume.
     "source=${localWorkspaceFolderBasename}_ha_venv,target=/home/vscode/ha-venv,type=volume",
-    // Named volume for uv package cache: avoids re-downloading packages when the venv is recreated (e.g. after HA upgrade).
-    // Mounted directly under $HOME (not ~/.cache/uv) so Docker does NOT create ~/.cache as root,
-    // which would cause EACCES when VS Code server tries to mkdir ~/.cache/Microsoft at startup.
-    // Ownership is fixed by onCreateCommand (Docker initializes volume mount points as root).
-    "source=${localWorkspaceFolderBasename}_uv_cache,target=/home/vscode/uv-cache,type=volume",
     // Named volume for the tools mise installs: a rebuild does not download Python and the CLI tools again.
     // Ownership is fixed by onCreateCommand (Docker initializes volume mount points as root).
     "source=${localWorkspaceFolderBasename}_mise_data,target=/home/vscode/mise-data,type=volume",

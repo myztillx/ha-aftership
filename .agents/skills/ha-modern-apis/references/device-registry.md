@@ -109,11 +109,10 @@ These are logged and keep working until the version in the last column. How test
 Setting `suggested_area` in `DeviceInfo`, `ChildDeviceInfo` or `async_get_or_create` is **not** deprecated: it places a
 new device in that area when it is first registered.
 
-## Upcoming (HA 2026.11+)
+## `DeviceInfo` and `ChildDeviceInfo` are dataclasses
 
-- **`DeviceInfo` and `ChildDeviceInfo` become dataclasses.** Construct them with keyword arguments —
-  `DeviceInfo(identifiers=…, name=…)` — which already works on 2026.10, and the code needs no change. Subscript access,
-  `.get()` and `.update()` keep working through a compatibility layer; a dict literal, `DeviceInfo({...})`,
-  unknown keys, `.copy()`, `|` and `isinstance(x, dict)` do not. An unset field reads as `UNDEFINED`, not `None`.
-  Serialize with `device_info.as_dict()`. A held `DeviceInfo` is registered with the new
-  `async_get_or_create_from_info` / `async_get_or_create_child_from_info` instead of `**device_info`.
+Construct them with keyword arguments — `DeviceInfo(identifiers=…, name=…)`. Subscript access, `.get()` and
+`.update()` keep working through a compatibility layer; a dict literal, `DeviceInfo({...})`, unknown keys, `.copy()`,
+`|` and `isinstance(x, dict)` do not. An unset field reads as `UNDEFINED`, not `None`. Serialize with
+`device_info.as_dict()`. A held `DeviceInfo` is registered with `async_get_or_create_from_info` /
+`async_get_or_create_child_from_info` instead of `**device_info`.

@@ -50,7 +50,7 @@ Every step method must return one of these result types (see [Data Entry Flow do
   - While the task is still running, call `async_show_progress` again — never start a second task
 
 **Always pass `step_id`** to `async_show_form`, `async_show_menu`, `async_show_progress` and `async_external_step`:
-the name of the step method you are in, without `async_step_`. Leaving it out is deprecated (HA 2026.11+), and the
+the name of the step method you are in, without `async_step_`. Leaving it out is deprecated, and the
 inferred ID is wrong whenever one step method calls another.
 
 ### Form Schemas
@@ -72,8 +72,8 @@ Schemas are written with Probatio (`import probatio`), the validation library Ho
 - Options most users never need go in a collapsed section. **Never read `self.show_advanced_options`** — it is
   deprecated and always returns `True`.
 
-**Fields that depend on another field (HA 2026.11+)** — `visible=` and the device-class-driven unit selector:
-[`flow-types.md`](../skills/ha-config-flow/references/flow-types.md#fields-that-depend-on-another-field-ha-202611).
+**Fields that depend on another field** — `visible=` and the device-class-driven unit selector:
+[`flow-types.md`](../skills/ha-config-flow/references/flow-types.md#fields-that-depend-on-another-field).
 
 **Schema hygiene:**
 
@@ -247,7 +247,9 @@ Setup failures in `async_setup_entry()` are not this file's scope: see
 
 - Handle only the versions you know — `if entry.version == 1 and entry.minor_version < 2:`. Home Assistant never
   calls it for a **newer major** version (it refuses that entry itself), and a **newer minor** version from a later
-  release must be left alone and `True` returned. A `if entry.version > N: return False` branch is dead code.
+  release must be left alone. A `if entry.version > N: return False` branch is dead code.
+- Return nothing: success is the absence of an exception. A custom integration's `True` still works, but is
+  deprecated.
 - Update via `hass.config_entries.async_update_entry(entry, version=X, minor_version=Y)`
 - On failure, **raise** rather than return `False`: `ConfigEntryNotReady` when retrying later can succeed,
   `ConfigEntryError` when it cannot — the repair that retries the latter:

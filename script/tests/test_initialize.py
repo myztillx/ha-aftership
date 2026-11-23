@@ -6,6 +6,7 @@ domain only survives by leaving the sync, and then never receives an upstream ch
 """
 
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -31,6 +32,7 @@ DOMAIN_OWNED = (
     "config/",
     "custom_components/",
     "docs/",
+    "hacs.json",
     "pyproject.toml",
     "requirements.txt",
     "tests/",
@@ -155,7 +157,9 @@ def test_excluded_paths_exist() -> None:
     assert not missing, f"exclude_paths in initialize.sh points at files that do not exist: {missing}"
 
 
-def _initialize_function(tmp_path: Path, minimum: str, *command: str) -> subprocess.CompletedProcess[str]:
+def _initialize_function(
+    tmp_path: Path, minimum: str, *command: str, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     """Call a function from initialize.sh, without its main, in a directory with the schema and a hacs.json."""
     (tmp_path / "schemas" / "json").mkdir(parents=True, exist_ok=True)
     shutil.copy(REPO_ROOT / "schemas" / "json" / "manifest_schema.json", tmp_path / "schemas" / "json")
@@ -172,7 +176,44 @@ def _initialize_function(tmp_path: Path, minimum: str, *command: str) -> subproc
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
+
+
+def _without_environment(tmp_path: Path) -> dict[str, str]:
+    """Return an environment in which neither a virtual environment nor the Node.js tools can be found."""
+    (tmp_path / "script" / ".lib").mkdir(parents=True)
+    shutil.copy(REPO_ROOT / "script" / ".lib" / "output.sh", tmp_path / "script" / ".lib")
+    hidden = {"VIRTUAL_ENV", "REMOTE_CONTAINERS", "CODESPACES", "GITHUB_ACTIONS"}
+    return {**{k: v for k, v in os.environ.items() if k not in hidden}, "HOME": str(tmp_path)}
+
+
+@pytest.mark.unit
+def test_formatting_is_only_announced_in_a_dry_run(tmp_path: Path) -> None:
+    """A dry run reports the formatting step and leaves the files alone."""
+    unformatted = tmp_path / "custom_components" / "x" / "a.py"
+    unformatted.parent.mkdir(parents=True)
+    unformatted.write_text("x=1\n", encoding="utf-8")
+
+    result = _initialize_function(tmp_path, "2026.10.0", "eval", "DRY_RUN=true; format_after_rename")
+
+    assert result.returncode == 0
+    assert "Would reformat" in result.stderr
+    assert unformatted.read_text(encoding="utf-8") == "x=1\n"
+
+
+@pytest.mark.unit
+def test_formatting_is_skipped_with_one_note_before_bootstrap(tmp_path: Path) -> None:
+    """Without the development environment the step says what to run later instead of failing twice."""
+    env = _without_environment(tmp_path)
+
+    result = _initialize_function(
+        tmp_path, "2026.10.0", "eval", 'format_after_rename; echo "summary=$format_summary"', env=env
+    )
+
+    assert result.returncode == 0
+    assert result.stderr.count("script/setup/bootstrap") == 1
+    assert "summary=skipped" in result.stdout
 
 
 @pytest.mark.unit
@@ -212,3 +253,14 @@ def test_categories_are_written_in_hassfest_key_order(tmp_path: Path) -> None:
     assert checked.stdout.strip() == "energy.ev_charging climate"
     assert list(json.loads(manifest.read_text("utf-8"))) == ["domain", "name", "categories", "codeowners", "version"]
     assert json.loads(manifest.read_text("utf-8"))["categories"] == ["energy.ev_charging", "climate"]
+
+
+@pytest.mark.unit
+def test_writing_no_categories_removes_the_template_placeholder(tmp_path: Path) -> None:
+    """Skipping the question must not leave the blueprint's placeholder category in a real integration."""
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"domain": "x", "name": "X", "categories": ["diy_makers.boards_hardware"]}), "utf-8")
+
+    _initialize_function(tmp_path, "2026.11.0", "category_tool", "write", str(manifest))
+
+    assert "categories" not in json.loads(manifest.read_text("utf-8"))

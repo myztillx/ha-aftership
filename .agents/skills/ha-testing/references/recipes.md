@@ -45,18 +45,6 @@ async def test_sensors(
     await snapshot_platform(hass, entity_registry, snapshot, config_entry.entry_id)
 ```
 
-`snapshot_platform` (from `pytest_homeassistant_custom_component.common`) accepts exactly one platform and fails on a
-disabled entity. `entity_registry_enabled_by_default` is a **Core** fixture that the custom-component package does not
-ship — define it in `conftest.py` when the first test needs it:
-
-```python
-@pytest.fixture
-def entity_registry_enabled_by_default() -> Generator[None]:
-    """Enable every entity, including those disabled by default."""
-    with patch(
-        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
-        new_callable=PropertyMock,
-        return_value=True,
-    ):
-        yield
-```
+`snapshot_platform` (from `pytest_homeassistant.common`) accepts exactly one platform and fails on a
+disabled entity, so request `entity_registry_enabled_by_default`, which `pytest-homeassistant` provides — never define
+it again in `conftest.py`.
